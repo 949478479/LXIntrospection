@@ -1,8 +1,10 @@
 # DLIntrospection
 
-这是一个简单的`NSObject`分类，改进自 [garnett/DLIntrospection](https://github.com/garnett/DLIntrospection)，可以查看类中的方法、实例变量、属性、协议等等，并做了格式化和类型解析处理，使日志信息更加美观、详细。在原作者的基础上修复了一些小问题，完善了对结构体类型的解析，但是对象类型的方法参数依旧只能解析成`id`类型。
+这是一个简单的`NSObject`分类，改进自 [garnett/DLIntrospection](https://github.com/garnett/DLIntrospection)，可以查看类中的方法、实例变量、属性、协议等等，并做了格式化和类型解析处理，使日志信息更加美观、详细。在原作者的基础上修复了一些小问题，完善了对结构体类型的解析，但是对象类型的方法参数和返回值依旧只能解析成`id`类型。
 
-## 查看实例方法
+## 在 Objective-C 中使用
+
+### 查看实例方法
 
 ```Objective-C
 (lldb) po [UIView dl_instanceMethods]
@@ -15,7 +17,7 @@
 )
 ```
 
-## 查看类方法
+### 查看类方法
 
 ```Objective-C
 (lldb) po [UIView dl_classMethods]
@@ -29,7 +31,7 @@
 )
 ```
 
-## 查看属性
+### 查看属性
 
 ```Objective-C
 (lldb) po [UIView dl_properties]
@@ -47,7 +49,7 @@
 )
 ```
 
-## 查看实例变量
+### 查看实例变量
 
 ```Objective-C
 (lldb) po [UIView dl_instanceVariables]
@@ -65,11 +67,10 @@
 )
 ```
 
-## 查看继承层级关系
+### 查看继承层级关系
 
 ```Objective-C
 (lldb) po [UIButton dl_inheritanceTree]
-
 • NSObject
  • UIResponder
   • UIView
@@ -77,7 +78,7 @@
     • UIButton
 ```
 
-## 查看采纳的协议
+### 查看采纳的协议
 
 ```Objective-C
 (lldb) po [UIView dl_adoptedProtocols]
@@ -93,7 +94,7 @@
 )
 ```
 
-## 查看协议内容
+### 查看协议内容
 
 ```Objective-C
 NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
@@ -132,7 +133,7 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
 }
 ```
 
-## 查看系统中所有类
+### 查看系统中所有类
 
 ```Objective-C
 (lldb) po DLClassList()
@@ -147,4 +148,31 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
     ...
     ___UIViewServiceInterfaceConnectionRequestAccessibility_super,
 )
+```
+
+## 在 Swift 中使用
+
+为了保持格式化效果，需要桥接为`NSArray`或者`NSDictionary`，并使用`NSLog`函数打印：
+
+```swift
+NSLog("%@", NSObject.dl_classMethods() as NSArray)
+```
+
+为了方便，专门提供了一些打印方法，如下所示：
+
+```swift
+// 在 LLDB 调试器中
+(lldb) p NSObject.dl_printClassMethods()
+
+// 在代码中
+NSObject.dl_printClassMethods()
+```
+
+## 注意事项
+
+为了获得更好的对齐效果，通过分类覆盖了`NSArray`和`NSDictionary`的`debugDescription`和
+`descriptionWithLocale:`方法，可以通过`NSObject+DLIntrospection.h`文件中的这个宏开启或关闭：
+
+```objective-c
+#define ENABLE_LOG_ALIGNMENT 1
 ```
