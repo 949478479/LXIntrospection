@@ -1,4 +1,4 @@
-//
+
 //  NSObject+DLIntrospection.m
 //  DLIntrospection
 //
@@ -10,34 +10,32 @@
 @import ObjectiveC.runtime;
 #import "NSObject+DLIntrospection.h"
 
+#pragma clang diagnostic ignored "-Wcstring-format-directive"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma mark - 用于格式化的辅助函数
 
 static NSString * DLDecodeType(const char *typeString)
 {
-    // 列举了一些常用类型，缺啥补啥吧 ಥ_ಥ. const 指针类型比较特殊，r^ 开头，而不是 ^ 开头，因此专门列出来.
-    if (!strcmp(typeString, @encode(BOOL)))            return @"BOOL";
-    if (!strcmp(typeString, @encode(float)))           return @"float";
-    if (!strcmp(typeString, @encode(double)))          return @"double";
-    if (!strcmp(typeString, @encode(long)))            return @"long";
-    if (!strcmp(typeString, @encode(unsigned long)))   return @"unsigned long";
-    if (!strcmp(typeString, @encode(int)))             return @"int";
-    if (!strcmp(typeString, @encode(unsigned int)))    return @"unsigned int";
-    if (!strcmp(typeString, @encode(void)))            return @"void";
-    if (!strcmp(typeString, @encode(char)))            return @"char";
-    if (!strcmp(typeString, @encode(unsigned char)))   return @"unsigned char";
-    if (!strcmp(typeString, @encode(unichar)))         return @"unichar";
-    if (!strcmp(typeString, @encode(char *)))          return @"char *";
-    if (!strcmp(typeString, @encode(const void *)))    return @"const void *";
-    if (!strcmp(typeString, @encode(const char *)))    return @"const char *";
-    if (!strcmp(typeString, @encode(const unichar *))) return @"const unichar *";
-    if (!strcmp(typeString, @encode(va_list)))         return @"va_list";
-    if (!strcmp(typeString, @encode(SEL)))             return @"SEL";
-    if (!strcmp(typeString, @encode(Class)))           return @"Class";
-    if (!strcmp(typeString, @encode(bool)))            return @"bool";
-    if (!strcmp(typeString, "Vv"))                     return @"oneway void";
-    if (!strcmp(typeString, "r^{CGPath=}"))            return @"CGPathRef"; // CGPathRef 本应该是 r^{CGPath=}，但 @encode(CGPathRef) 是 ^{CGPath=} 而不是 r^{CGPath=}
+    // 列举了一些常用类型，缺啥补啥吧 ಥ_ಥ.
+    if (!strcmp(typeString, @encode(BOOL)))          return @"BOOL";
+    if (!strcmp(typeString, @encode(float)))         return @"float";
+    if (!strcmp(typeString, @encode(double)))        return @"double";
+    if (!strcmp(typeString, @encode(long)))          return @"long";
+    if (!strcmp(typeString, @encode(unsigned long))) return @"unsigned long";
+    if (!strcmp(typeString, @encode(int)))           return @"int";
+    if (!strcmp(typeString, @encode(unsigned int)))  return @"unsigned int";
+    if (!strcmp(typeString, @encode(void)))          return @"void";
+    if (!strcmp(typeString, @encode(char)))          return @"char";
+    if (!strcmp(typeString, @encode(unsigned char))) return @"unsigned char";
+    if (!strcmp(typeString, @encode(char *)))        return @"char *";
+    if (!strcmp(typeString, @encode(unichar)))       return @"unichar";
+    if (!strcmp(typeString, @encode(va_list)))       return @"va_list";
+    if (!strcmp(typeString, @encode(SEL)))           return @"SEL";
+    if (!strcmp(typeString, @encode(Class)))         return @"Class";
+    if (!strcmp(typeString, @encode(bool)))          return @"bool";
+    if (!strcmp(typeString, "Vv"))                   return @"oneway void";
 
     NSString *result = [NSString stringWithUTF8String:typeString];
 
@@ -63,11 +61,7 @@ static NSString * DLDecodeType(const char *typeString)
     // ^ 表示指针类型，例如 ^i 表示 int *，^{CGColor=} 表示 CGColorRef，^? 表示函数指针类型
     if ([result hasPrefix:@"^"])
     {
-        /* 
-         @encode(CGPathRef) 是 ^{CGPath=}，CGPathRef 本应该是 r^{CGPath=}，但是 CGPathRef 作为方法参数时，
-         获取到的是 ^{CGPath=}，而不是 r^{CGPath=}，因此再使用 ^{CGPath=} 判断一次，统一返回 CGPathRef.
-         */
-        if (!strcmp(typeString, @encode(CGPathRef)))       return @"CGPathRef";
+        // 各种结构体指针.
         if (!strcmp(typeString, @encode(CGColorRef)))      return @"CGColorRef";
         if (!strcmp(typeString, @encode(CGImageRef)))      return @"CGImageRef";
         if (!strcmp(typeString, @encode(CGContextRef)))    return @"CGContextRef";
@@ -75,16 +69,25 @@ static NSString * DLDecodeType(const char *typeString)
         if (!strcmp(typeString, @encode(CFArrayRef)))      return @"CFArrayRef";
         if (!strcmp(typeString, @encode(CFDictionaryRef))) return @"CFDictionaryRef";
         if (!strcmp(typeString, @encode(NSZone *)))        return @"NSZone *";
+        if (!strcmp(typeString, @encode(CGPathRef)))       return @"CGPathRef";
+
+        // ^? 表示函数指针类型，但是无法确定具体类型
+        if (!strcmp(typeString, "^?")) return @"FunctionPointer";
 
         // 进一步确定具体的指针类型，二级指针不空格，例如 unichar **
         NSString *type = DLDecodeType([result substringFromIndex:1].UTF8String);
         return [NSString stringWithFormat:@"%@%@*", type, [type hasSuffix:@"*"] ? @"" : @" "];
     }
 
-    // ^? 表示函数指针类型，但是无法确定具体类型
-    if (!strcmp(typeString, "^?")) return @"FunctionPointer";
+    // r 表示 const 类型
+    if ([result hasPrefix:@"r"]) {
+        // CGPathRef 作为属性类型时就会解析成这样.
+        if (!strcmp(typeString, "r^{CGPath=}")) return @"CGPathRef";
+        NSString *type = DLDecodeType([result substringFromIndex:1].UTF8String);
+        return [NSString stringWithFormat:@"const %@", type];
+    }
 
-    // 无法确定类型，基本上是 ? 表示的类型，只能原样返回
+    // 无法确定类型，例如用 ? 表示的类型，只能原样返回
     return result;
 }
 
@@ -239,7 +242,7 @@ static NSArray<NSString *> * DLFormattedMethodsForProtocol(Protocol *proto, BOOL
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma mark - 获取系统中注册的所有类的类名
+#pragma mark - 查看所有类的类名
 
 NSArray<NSString *> * DLClassList()
 {
@@ -255,9 +258,14 @@ NSArray<NSString *> * DLClassList()
     return [result sortedArrayUsingSelector:@selector(compare:)];
 }
 
-#pragma mark - 获取协议中的方法和属性的描述
+void DLPrintClassList()
+{
+    NSLog(@"%@", DLClassList());
+}
 
-NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
+#pragma mark - 查看协议中的方法和属性
+
+NSDictionary<NSString *, NSArray<NSString *> *> * DLDescriptionForProtocol(Protocol *proto)
 {
     NSArray *requiredMethods = nil;
     {
@@ -302,41 +310,16 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
     return methodsAndProperties;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation NSObject (DLIntrospection)
-
-#pragma mark - 获取继承层级关系的描述
-
-+ (NSString *)dl_inheritanceTree
+void DLPrintDescriptionForProtocol(Protocol *proto)
 {
-    NSMutableArray<NSString *> *classNames = [NSMutableArray arrayWithObject:
-                                  [NSString stringWithFormat:@"• %s", class_getName(self)]];
-    {
-        Class superClass = class_getSuperclass(self);
-        do {
-            [classNames addObject:[NSString stringWithFormat:@"• %s", class_getName(superClass)]];
-        } while ((superClass = class_getSuperclass(superClass)));
-    }
-
-    NSMutableString *result = [NSMutableString new];
-    {
-        NSUInteger count = classNames.count;
-        [classNames enumerateObjectsWithOptions:NSEnumerationReverse
-                                     usingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                                         NSMutableString *className = obj.mutableCopy;
-                                         for (NSUInteger i = 0; count - 1 - idx > i; ++i) {
-                                             [className insertString:@" " atIndex:0];
-                                         }
-                                         [result appendFormat:@"\n%@", className];
-                                     }];
-    }
-    return result;
+    NSLog(@"%s\n%@", protocol_getName(proto), DLDescriptionForProtocol(proto));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma mark - 获取类中所有属性的描述
+@implementation NSObject (DLIntrospection)
+
+#pragma mark - 查看属性
 
 + (NSArray<NSString *> *)dl_properties
 {
@@ -352,7 +335,12 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
     return result;
 }
 
-#pragma mark - 获取类中所有实例变量的描述
++ (void)dl_printProperties
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_properties);
+}
+
+#pragma mark - 查看实例变量
 
 + (NSArray<NSString *> *)dl_instanceVariables
 {
@@ -374,25 +362,40 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
     return result;
 }
 
++ (void)dl_printInstanceVariables
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_instanceVariables);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma mark - 获取类中所有类方法的描述
+#pragma mark - 查看类方法
 
 + (NSArray<NSString *> *)dl_classMethods
 {
     return DLMethodsForClass(self, @"+");
 }
 
-#pragma mark - 获取类中所有实例方法的描述
++ (void)dl_printClassMethods
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_classMethods);
+}
+
+#pragma mark - 查看实例方法
 
 + (NSArray<NSString *> *)dl_instanceMethods
 {
     return DLMethodsForClass(self, @"-");
 }
 
++ (void)dl_printInstanceMethods
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_instanceMethods);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma mark - 获取协议中定义的方法和属性的描述
+#pragma mark - 查看采纳的协议
 
 + (NSArray<NSString *> *)dl_adoptedProtocols
 {
@@ -409,7 +412,7 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
             {
                 for (uint idx = 0; idx < adoptedCount; ++idx) {
                     [adoptedProtocolNames addObject:
-                     [NSString stringWithUTF8String:protocol_getName(adotedProtocols[idx])]];
+                     (NSString *)[NSString stringWithUTF8String:protocol_getName(adotedProtocols[idx])]];
                 }
             }
 
@@ -428,6 +431,47 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
         free(protocols);
     }
     return result;
+}
+
++ (void)dl_printAdoptedProtocols
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_adoptedProtocols);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma mark - 查看继承层级关系
+
++ (NSString *)dl_inheritanceTree
+{
+    NSMutableArray<NSString *> *classNames = [NSMutableArray new];
+    {
+        Class superClass = self;
+        do {
+            [classNames addObject:[NSString stringWithFormat:@"• %s", class_getName(superClass)]];
+        } while ((superClass = class_getSuperclass(superClass)));
+    }
+
+    NSMutableString *result = [NSMutableString new];
+    {
+        NSUInteger count = classNames.count;
+        [classNames enumerateObjectsWithOptions:NSEnumerationReverse
+                                     usingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                                         NSMutableString *className = obj.mutableCopy;
+                                         for (NSUInteger i = 0; count - 1 - idx > i; ++i) {
+                                             [className insertString:@" " atIndex:0];
+                                         }
+                                         [result appendFormat:@"%@%@",
+                                          idx == count - 1 ? @"" : @"\n",
+                                          className];
+                                     }];
+    }
+    return result;
+}
+
++ (void)dl_printInheritanceTree
+{
+    NSLog(@"%s\n%@", class_getName(self), self.dl_inheritanceTree);
 }
 
 @end
@@ -460,6 +504,11 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
     return description;
 }
 
+- (NSString *)descriptionWithLocale:(id)locale
+{
+    return self.debugDescription;
+}
+
 @end
 
 @implementation NSDictionary (LXLogAlignment)
@@ -482,6 +531,11 @@ NSDictionary<NSString *, NSString *> * DLDescriptionForProtocol(Protocol *proto)
     [description appendString:@"}"];
 
     return description;
+}
+
+- (NSString *)descriptionWithLocale:(id)locale
+{
+    return self.debugDescription;
 }
 
 @end
