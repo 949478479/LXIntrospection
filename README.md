@@ -4,37 +4,10 @@
 
 ## 在 Objective-C 中使用
 
-### 查看实例方法
-
-```Objective-C
-(lldb) po [UIView dl_instanceMethods]
-(
-    - (void)_web_setSubviews:(id)arg0,
-    - (id)_recursiveFindDescendantScrollViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
-    - (id)_findDescendantViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
-    - (BOOL)_accessibilityCanBecomeNativeFocused,
-    ...
-)
-```
-
-### 查看类方法
-
-```Objective-C
-(lldb) po [UIView dl_classMethods]
-(
-    + (id)_axFocusedWindowSubviews,
-    + (id)_accessibilityTitleForSystemTag:(long)arg0,
-    + (Class)safeCategoryBaseClass,
-    + (void)_accessibilityPerformValidations:(id)arg0,
-    + (id)_accessibilityElementsAndContainersDescendingFromViews:(id)arg0 options:(id)arg1 sorted:(BOOL)arg2,
-    ...
-)
-```
-
 ### 查看属性
 
 ```Objective-C
-(lldb) po [UIView dl_properties]
+(lldb) po [UIView dl_propertyList]
 (
     @property (nonatomic, assign) int action,
     @property (atomic, copy, readonly) NSString *description,
@@ -52,7 +25,7 @@
 ### 查看实例变量
 
 ```Objective-C
-(lldb) po [UIView dl_instanceVariables]
+(lldb) po [UIView dl_ivarList]
 (
     NSMutableArray *_constraintsExceptingSubviewAutoresizingConstraints,
     UITraitCollection *_cachedTraitCollection,
@@ -67,21 +40,37 @@
 )
 ```
 
-### 查看继承层级关系
+### 查看实例方法
 
 ```Objective-C
-(lldb) po [UIButton dl_inheritanceTree]
-• NSObject
- • UIResponder
-  • UIView
-   • UIControl
-    • UIButton
+(lldb) po [UIView dl_instanceMethodList]
+(
+    - (void)_web_setSubviews:(id)arg0,
+    - (id)_recursiveFindDescendantScrollViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
+    - (id)_findDescendantViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
+    - (BOOL)_accessibilityCanBecomeNativeFocused,
+    ...
+)
+```
+
+### 查看类方法
+
+```Objective-C
+(lldb) po [UIView dl_classMethodList]
+(
+    + (id)_axFocusedWindowSubviews,
+    + (id)_accessibilityTitleForSystemTag:(long)arg0,
+    + (Class)safeCategoryBaseClass,
+    + (void)_accessibilityPerformValidations:(id)arg0,
+    + (id)_accessibilityElementsAndContainersDescendingFromViews:(id)arg0 options:(id)arg1 sorted:(BOOL)arg2,
+    ...
+)
 ```
 
 ### 查看采纳的协议
 
 ```Objective-C
-(lldb) po [UIView dl_adoptedProtocols]
+(lldb) po [UIView dl_protocolList]
 (
     _UIScrollNotification <NSObject>,
     UITextEffectsOrdering,
@@ -92,6 +81,17 @@
     _UIFocusEnvironmentInternal <UIFocusEnvironment>,
 	...
 )
+```
+
+### 查看继承层级关系
+
+```Objective-C
+(lldb) po [UIButton dl_inheritanceTree]
+• NSObject
+ • UIResponder
+  • UIView
+   • UIControl
+    • UIButton
 ```
 
 ### 查看协议内容
@@ -155,17 +155,17 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
 为了保持格式化效果，需要桥接为`NSArray`或者`NSDictionary`，并使用`NSLog`函数打印：
 
 ```swift
-NSLog("%@", NSObject.dl_classMethods() as NSArray)
+NSLog("%@", NSObject.dl_classMethodList() as NSArray)
 ```
 
 为了方便，专门提供了一些打印方法，如下所示：
 
 ```swift
 // 在 LLDB 调试器中
-(lldb) p NSObject.dl_printClassMethods()
+(lldb) p NSObject.dl_printClassMethodList()
 
 // 在代码中
-NSObject.dl_printClassMethods()
+NSObject.dl_printClassMethodList()
 ```
 
 ## 注意事项

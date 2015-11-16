@@ -321,7 +321,7 @@ void DLPrintDescriptionForProtocol(Protocol *proto)
 
 #pragma mark - 查看属性
 
-+ (NSArray<NSString *> *)dl_properties
++ (NSArray<NSString *> *)dl_propertyList
 {
     NSMutableArray *result = [NSMutableArray new];
     {
@@ -335,14 +335,14 @@ void DLPrintDescriptionForProtocol(Protocol *proto)
     return result;
 }
 
-+ (void)dl_printProperties
++ (void)dl_printPropertyList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.dl_properties);
+    NSLog(@"%s\n%@", class_getName(self), self.dl_propertyList);
 }
 
 #pragma mark - 查看实例变量
 
-+ (NSArray<NSString *> *)dl_instanceVariables
++ (NSArray<NSString *> *)dl_ivarList
 {
     NSMutableArray *result = [NSMutableArray new];
     {
@@ -362,42 +362,42 @@ void DLPrintDescriptionForProtocol(Protocol *proto)
     return result;
 }
 
-+ (void)dl_printInstanceVariables
++ (void)dl_printIvarList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.dl_instanceVariables);
+    NSLog(@"%s\n%@", class_getName(self), self.dl_ivarList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma mark - 查看类方法
 
-+ (NSArray<NSString *> *)dl_classMethods
++ (NSArray<NSString *> *)dl_classMethodList
 {
     return DLMethodsForClass(self, @"+");
 }
 
-+ (void)dl_printClassMethods
++ (void)dl_printClassMethodList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.dl_classMethods);
+    NSLog(@"%s\n%@", class_getName(self), self.dl_classMethodList);
 }
 
 #pragma mark - 查看实例方法
 
-+ (NSArray<NSString *> *)dl_instanceMethods
++ (NSArray<NSString *> *)dl_instanceMethodList
 {
     return DLMethodsForClass(self, @"-");
 }
 
-+ (void)dl_printInstanceMethods
++ (void)dl_printInstanceMethodList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.dl_instanceMethods);
+    NSLog(@"%s\n%@", class_getName(self), self.dl_instanceMethodList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma mark - 查看采纳的协议
 
-+ (NSArray<NSString *> *)dl_adoptedProtocols
++ (NSArray<NSString *> *)dl_protocolList
 {
     NSMutableArray *result = [NSMutableArray new];
     {
@@ -433,9 +433,9 @@ void DLPrintDescriptionForProtocol(Protocol *proto)
     return result;
 }
 
-+ (void)dl_printAdoptedProtocols
++ (void)dl_printProtocolList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.dl_adoptedProtocols);
+    NSLog(@"%s\n%@", class_getName(self), self.dl_protocolList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
