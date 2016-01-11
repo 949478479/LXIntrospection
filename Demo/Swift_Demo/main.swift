@@ -8,14 +8,14 @@
 
 import Foundation
 
-//    NSObject.dl_printIvarList()
-//    NSObject.dl_printPropertyList()
-
-//    NSObject.dl_printClassMethodList()
-//    NSObject.dl_printInstanceMethodList()
-
-//    NSData.dl_printProtocolList()
-//    NSMutableArray.dl_printInheritanceTree()
-
-//    DLPrintClassList()
-//    DLPrintDescriptionForProtocol(NSObjectProtocol.self)
+//NSObject.lx_printIvarList()
+//NSObject.lx_printPropertyList()
+//
+//NSObject.lx_printClassMethodList()
+//NSObject.lx_printInstanceMethodList()
+//
+//NSData.lx_printProtocolList()
+//NSMutableArray.lx_printInheritanceTree()
+//
+//LXPrintClassList()
+//LXPrintDescriptionForProtocol(NSObjectProtocol.self)

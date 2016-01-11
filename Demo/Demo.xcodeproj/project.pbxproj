@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		18487D731BF8FC690043F149 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 18487D721BF8FC690043F149 /* main.m */; };
-		18487D7C1BF8FC890043F149 /* NSObject+DLIntrospection.m in Sources */ = {isa = PBXBuildFile; fileRef = 18487D7B1BF8FC890043F149 /* NSObject+DLIntrospection.m */; };
 		18487D841BF8FDA50043F149 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18487D831BF8FDA50043F149 /* main.swift */; };
-		18487D8C1BF90B880043F149 /* NSObject+DLIntrospection.m in Sources */ = {isa = PBXBuildFile; fileRef = 18487D7B1BF8FC890043F149 /* NSObject+DLIntrospection.m */; };
+		18DA16C81C4437C1003A5E75 /* NSObject+LXIntrospection.m in Sources */ = {isa = PBXBuildFile; fileRef = 18DA16C71C4437A7003A5E75 /* NSObject+LXIntrospection.m */; };
+		18DA16C91C4437C1003A5E75 /* NSObject+LXIntrospection.m in Sources */ = {isa = PBXBuildFile; fileRef = 18DA16C71C4437A7003A5E75 /* NSObject+LXIntrospection.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,11 +37,11 @@
 /* Begin PBXFileReference section */
 		18487D6F1BF8FC690043F149 /* ObjectiveC_Demo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ObjectiveC_Demo; sourceTree = BUILT_PRODUCTS_DIR; };
 		18487D721BF8FC690043F149 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		18487D7A1BF8FC890043F149 /* NSObject+DLIntrospection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+DLIntrospection.h"; sourceTree = "<group>"; };
-		18487D7B1BF8FC890043F149 /* NSObject+DLIntrospection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+DLIntrospection.m"; sourceTree = "<group>"; };
 		18487D811BF8FDA50043F149 /* Swift_Demo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Swift_Demo; sourceTree = BUILT_PRODUCTS_DIR; };
 		18487D831BF8FDA50043F149 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		18487D881BF8FFF10043F149 /* Swift_Demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Swift_Demo-Bridging-Header.h"; path = "Swift_Demo/Swift_Demo-Bridging-Header.h"; sourceTree = SOURCE_ROOT; };
+		18DA16C61C4437A7003A5E75 /* NSObject+LXIntrospection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSObject+LXIntrospection.h"; sourceTree = "<group>"; };
+		18DA16C71C4437A7003A5E75 /* NSObject+LXIntrospection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSObject+LXIntrospection.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,7 +65,7 @@
 		18487D661BF8FC680043F149 = {
 			isa = PBXGroup;
 			children = (
-				18487D791BF8FC890043F149 /* DLIntrospection */,
+				18DA16C51C4437A7003A5E75 /* LXIntrospection */,
 				18487D711BF8FC690043F149 /* ObjectiveC_Demo */,
 				18487D821BF8FDA50043F149 /* Swift_Demo */,
 				18487D701BF8FC690043F149 /* Products */,
@@ -89,16 +89,6 @@
 			path = ObjectiveC_Demo;
 			sourceTree = "<group>";
 		};
-		18487D791BF8FC890043F149 /* DLIntrospection */ = {
-			isa = PBXGroup;
-			children = (
-				18487D7A1BF8FC890043F149 /* NSObject+DLIntrospection.h */,
-				18487D7B1BF8FC890043F149 /* NSObject+DLIntrospection.m */,
-			);
-			name = DLIntrospection;
-			path = ../DLIntrospection;
-			sourceTree = "<group>";
-		};
 		18487D821BF8FDA50043F149 /* Swift_Demo */ = {
 			isa = PBXGroup;
 			children = (
@@ -106,6 +96,16 @@
 				18487D881BF8FFF10043F149 /* Swift_Demo-Bridging-Header.h */,
 			);
 			path = Swift_Demo;
+			sourceTree = "<group>";
+		};
+		18DA16C51C4437A7003A5E75 /* LXIntrospection */ = {
+			isa = PBXGroup;
+			children = (
+				18DA16C61C4437A7003A5E75 /* NSObject+LXIntrospection.h */,
+				18DA16C71C4437A7003A5E75 /* NSObject+LXIntrospection.m */,
+			);
+			name = LXIntrospection;
+			path = ../LXIntrospection;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -187,7 +187,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18487D731BF8FC690043F149 /* main.m in Sources */,
-				18487D7C1BF8FC890043F149 /* NSObject+DLIntrospection.m in Sources */,
+				18DA16C81C4437C1003A5E75 /* NSObject+LXIntrospection.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,8 +195,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18487D8C1BF90B880043F149 /* NSObject+DLIntrospection.m in Sources */,
 				18487D841BF8FDA50043F149 /* main.swift in Sources */,
+				18DA16C91C4437C1003A5E75 /* NSObject+LXIntrospection.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -334,6 +334,7 @@
 				18487D781BF8FC690043F149 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		18487D851BF8FDA50043F149 /* Build configuration list for PBXNativeTarget "Swift_Demo" */ = {
 			isa = XCConfigurationList;
@@ -342,6 +343,7 @@
 				18487D871BF8FDA50043F149 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

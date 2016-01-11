@@ -7,21 +7,34 @@
 //
 
 @import Foundation;
-#import "NSObject+DLIntrospection.h"
+#import "NSObject+LXIntrospection.h"
 
 int main(int argc, const char * argv[]) {
 
-//    [NSObject dl_printIvarList];
-//    [NSObject dl_printPropertyList];
+//    [NSObject lx_printIvarList];
+//    [NSObject lx_printPropertyList];
 
-//    [NSObject dl_printClassMethodList];
-//    [NSObject dl_printInstanceMethodList];
+//    [NSObject lx_printClassMethodList];
+//    [NSObject lx_printInstanceMethodList];
 
-//    [NSData dl_printProtocolList];
-//    [NSMutableArray dl_printInheritanceTree];
+//    [NSData lx_printProtocolList];
+//    [NSMutableArray lx_printInheritanceTree];
 
-//    DLPrintClassList();
-//    DLPrintDescriptionForProtocol(@protocol(NSObject));
+//    LXPrintClassList();
+//    LXPrintDescriptionForProtocol(@protocol(NSObject));
+
+    
+//    NSLog(@"%@", [NSObject lx_ivarList]);
+//    NSLog(@"%@", [NSObject lx_propertyList]);
+
+//    NSLog(@"%@", [NSObject lx_classMethodList]);
+//    NSLog(@"%@", [NSObject lx_instanceMethodList]);
+
+//    NSLog(@"%@", [NSData lx_protocolList]);
+//    NSLog(@"%@", [NSMutableArray lx_inheritanceTree]);
+
+//    NSLog(@"%@", LXClassList());
+//    NSLog(@"%@", LXDescriptionForProtocol(@protocol(NSObject)));
 
     return 0;
 }

@@ -1,13 +1,13 @@
-# DLIntrospection
+# LXIntrospection
 
-这是一个简单的`NSObject`分类，改进自 [garnett/DLIntrospection](https://github.com/garnett/DLIntrospection)，可以查看类中的方法、实例变量、属性、协议等等，并做了格式化和类型解析处理，使日志信息更加美观、详细。在原作者的基础上修复了一些小问题，完善了对结构体类型的解析，但是对象类型的方法参数和返回值依旧只能解析成`id`类型。
+这是一个简单的 `NSObject` 分类，改进自 [garnett/DLIntrospection](https://github.com/garnett/DLIntrospection)，可以查看类中的方法、实例变量、属性、协议等等，并做了格式化和类型解析处理，使日志信息更加美观、详细。在原作者的基础上修复了一些 bug，完善了对结构体的解析，但是对象类型的方法参数和返回值依旧只能解析成 `id` 类型，`block` 和函数指针的具体类型无法解析。
 
 ## 在 Objective-C 中使用
 
 ### 查看属性
 
 ```Objective-C
-(lldb) po [UIView dl_propertyList]
+(lldb) po [UIView lx_propertyList]
 (
     @property (nonatomic, assign) int action,
     @property (atomic, copy, readonly) NSString *description,
@@ -25,7 +25,7 @@
 ### 查看实例变量
 
 ```Objective-C
-(lldb) po [UIView dl_ivarList]
+(lldb) po [UIView lx_ivarList]
 (
     NSMutableArray *_constraintsExceptingSubviewAutoresizingConstraints,
     UITraitCollection *_cachedTraitCollection,
@@ -43,7 +43,7 @@
 ### 查看实例方法
 
 ```Objective-C
-(lldb) po [UIView dl_instanceMethodList]
+(lldb) po [UIView lx_instanceMethodList]
 (
     - (void)_web_setSubviews:(id)arg0,
     - (id)_recursiveFindDescendantScrollViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
@@ -56,7 +56,7 @@
 ### 查看类方法
 
 ```Objective-C
-(lldb) po [UIView dl_classMethodList]
+(lldb) po [UIView lx_classMethodList]
 (
     + (id)_axFocusedWindowSubviews,
     + (id)_accessibilityTitleForSystemTag:(long)arg0,
@@ -70,7 +70,7 @@
 ### 查看采纳的协议
 
 ```Objective-C
-(lldb) po [UIView dl_protocolList]
+(lldb) po [UIView lx_protocolList]
 (
     _UIScrollNotification <NSObject>,
     UITextEffectsOrdering,
@@ -86,7 +86,7 @@
 ### 查看继承层级关系
 
 ```Objective-C
-(lldb) po [UIButton dl_inheritanceTree]
+(lldb) po [UIButton lx_inheritanceTree]
 • NSObject
  • UIResponder
   • UIView
@@ -152,26 +152,26 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
 
 ## 在 Swift 中使用
 
-为了保持格式化效果，需要桥接为`NSArray`或者`NSDictionary`，并使用`NSLog`函数打印：
+为了保持格式化效果，需要桥接为 `NSArray` 或者 `NSDictionary`，并使用 `NSLog` 函数打印：
 
 ```swift
-NSLog("%@", NSObject.dl_classMethodList() as NSArray)
+NSLog("%@", NSObject.lx_classMethodList() as NSArray)
 ```
 
-为了方便，专门提供了一些打印方法，如下所示：
+为了方便，专门提供了一些打印方法：
 
 ```swift
 // 在 LLDB 调试器中
-(lldb) p NSObject.dl_printClassMethodList()
+(lldb) p NSObject.lx_printClassMethodList()
 
 // 在代码中
-NSObject.dl_printClassMethodList()
+NSObject.lx_printClassMethodList()
 ```
 
 ## 注意事项
 
-为了获得更好的对齐效果，通过分类覆盖了`NSArray`和`NSDictionary`的`debugDescription`和
-`descriptionWithLocale:`方法，可以通过`NSObject+DLIntrospection.h`文件中的这个宏开启或关闭：
+为了获得更好的对齐效果，通过分类覆盖了 `NSArray` 和 `NSDictionary` 的 `debugDescription` 和
+`descriptionWithLocale:` 方法，可以通过 `NSObject+DLIntrospection.h` 文件中的宏开启或关闭：
 
 ```objective-c
 #define ENABLE_LOG_ALIGNMENT 1
