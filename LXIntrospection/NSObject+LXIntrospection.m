@@ -12,57 +12,10 @@
 
 #pragma mark - 格式化辅助函数 -
 
-static NSString * LXDecodeType(const char *typeStr)
+static NSString * LXDecodeType(const char *typeString)
 {
-    // @ 开头表示对象
-    if (typeStr[0] == '@') {
-        // 单个 @ 表示 id 类型
-        if (strlen(typeStr) == 1) return @"id";
-        // @? 表示 block 类型，无法确定具体类型
-        if (!strcmp(typeStr, "@?")) return @"Block";
-        // 某种对象类型，类似 @"NSString" 这种格式
-        NSString *result = [NSString stringWithUTF8String:typeStr];
-        return [[result substringWithRange:(NSRange){2, result.length - 3}] stringByAppendingString:@" *"];
-    }
-
-    // { 开头表示结构体，类似 {CGPoint=dd} 这种格式，如果是结构体二级指针，例如 CGPoint **，格式为 {CGPoint}
-    if (typeStr[0] == '{') {
-        NSString *result = [NSString stringWithUTF8String:typeStr];
-        NSUInteger location = [result rangeOfString:@"="].location;
-        NSRange range = {1, location == NSNotFound ? result.length - 2: location - 1};
-        return [result substringWithRange:range];
-    }
-
-    // ^ 开头表示指针类型，例如 ^i 表示 int *
-    if (typeStr[0] == '^') {
-        // ^? 表示函数指针类型，但是无法确定具体类型
-        if (typeStr[1] == '?') return @"FunctionPointer";
-        // 进一步确定指针类型
-        NSString *decodeTypeStr = LXDecodeType([[NSString stringWithUTF8String:typeStr]
-                                          substringFromIndex:1].UTF8String);
-        return [NSString stringWithFormat:@"%@%@*",
-                decodeTypeStr, [decodeTypeStr hasSuffix:@"*"] ? @"" : @" "];
-    }
-
-    // 某些特殊限定符
-    NSString *qualifiers = nil;
-    switch (typeStr[0]) {
-        case 'r': qualifiers = @"const";  break;
-        case 'n': qualifiers = @"in";     break;
-        case 'N': qualifiers = @"inout";  break;
-        case 'o': qualifiers = @"out";    break;
-        case 'O': qualifiers = @"bycopy"; break;
-        case 'R': qualifiers = @"byref";  break;
-        case 'V': qualifiers = @"oneway"; break;
-    }
-    if (qualifiers) {
-        return [NSString stringWithFormat:@"%@ %@", qualifiers,
-                LXDecodeType([[NSString stringWithUTF8String:typeStr]
-                              substringFromIndex:1].UTF8String)];
-    }
-
     // 普通类型
-    switch (typeStr[0]) {
+    switch (typeString[0]) {
         case 'c': return @"char";
         case 'C': return @"unsigned char";
         case 's': return @"short";
@@ -81,7 +34,79 @@ static NSString * LXDecodeType(const char *typeStr)
         case ':': return @"SEL";
     }
 
-    if (!strcmp(typeStr, @encode(va_list))) return @"va_list";
+    // @ 开头表示对象
+    if (typeString[0] == '@') {
+        // 单个 @ 表示 id 类型
+        if (strlen(typeString) == 1) return @"id";
+
+        // @? 表示 block 类型，无法确定具体类型
+        if (!strcmp(typeString, "@?")) return @"Block";
+
+        // 某种对象类型，类似 @"NSString" 这种格式
+        NSString *typeStr    = [NSString stringWithUTF8String:typeString];
+        NSString *subtypeStr = [typeStr substringWithRange:(NSRange){2, typeStr.length - 3}];
+        return [subtypeStr stringByAppendingString:@" *"];
+    }
+
+    // { 开头表示结构体，类似 {CGPoint=dd} 这种格式，如果是结构体二级指针，例如 CGPoint **，格式为 {CGPoint}
+    if (typeString[0] == '{') {
+        NSString  *typeStr  = [NSString stringWithUTF8String:typeString];
+        NSUInteger location = [typeStr rangeOfString:@"="].location;
+        NSRange    range    = { 1, location == NSNotFound ? typeStr.length - 2: location - 1 };
+        return [typeStr substringWithRange:range];
+    }
+
+    // ^ 开头表示指针类型，例如 ^i 表示 int *
+    if (typeString[0] == '^') {
+        // ^? 表示函数指针类型，但是无法确定具体类型
+        if (typeString[1] == '?') return @"FunctionPointer";
+
+        // 进一步确定指针类型
+        NSString *subtypeStr = [[NSString stringWithUTF8String:typeString] substringFromIndex:1];
+        NSString *decodedTypeStr = LXDecodeType(subtypeStr.UTF8String);
+        return [NSString stringWithFormat:@"%@%@*",
+                decodedTypeStr, [decodedTypeStr hasSuffix:@"*"] ? @"" : @" "];
+    }
+
+    // [ 开头表示数组类型，例如 [3i] 表示 int[3]
+    if (typeString[0] == '[') {
+        NSString *typeStr    = [NSString stringWithUTF8String:typeString];
+        NSRange digitRange   = [typeStr rangeOfString:@"\\d+" options:NSRegularExpressionSearch];
+        NSString *digitStr   = [typeStr substringWithRange:digitRange];
+        NSRange subtypeRange = { digitRange.location + digitRange.length, typeStr.length - digitRange.length - 2 };
+        NSString *subtypeStr = [typeStr substringWithRange:subtypeRange];
+
+        NSString *decodedSubtypeStr = LXDecodeType(subtypeStr.UTF8String);
+        NSRange range = [decodedSubtypeStr rangeOfString:@"["]; // 解析后的类型还是数组，形如 int[3]
+        if (range.location != NSNotFound) {
+            // 例如，解析后类型为 int[3]，当前数字为 2，即外层数组容量为 2，则拼接格式为 int [2][3]
+            NSString *typeStr = [decodedSubtypeStr substringToIndex:range.location];
+            NSString *otherStr = [decodedSubtypeStr substringFromIndex:range.location];
+            return [NSString stringWithFormat:@"%@[%@]%@", typeStr, digitStr, otherStr];
+        } else {
+            return [NSString stringWithFormat:@"%@[%@]", decodedSubtypeStr, digitStr];
+        }
+    }
+
+    // 某些特殊限定符
+    NSString *qualifiers = nil;
+    {
+        switch (typeString[0]) {
+            case 'r': qualifiers = @"const";  break;
+            case 'n': qualifiers = @"in";     break;
+            case 'N': qualifiers = @"inout";  break;
+            case 'o': qualifiers = @"out";    break;
+            case 'O': qualifiers = @"bycopy"; break;
+            case 'R': qualifiers = @"byref";  break;
+            case 'V': qualifiers = @"oneway"; break;
+        }
+        if (qualifiers) {
+            NSString *subtypeStr = [[NSString stringWithUTF8String:typeString] substringFromIndex:1];
+            return [NSString stringWithFormat:@"%@ %@", qualifiers, LXDecodeType(subtypeStr.UTF8String)];
+        }
+    }
+
+    if (!strcmp(typeString, @encode(va_list))) return @"va_list";
 
     return @"?"; // 无法确定
 }
@@ -301,21 +326,35 @@ void LXPrintDescriptionForProtocol(Protocol *proto)
 
 + (NSArray<NSString *> *)lx_ivarList
 {
-    NSMutableArray *result = [NSMutableArray new];
+    NSMutableArray *ivarList = [NSMutableArray new];
 
     uint outCount;
     Ivar *ivars = class_copyIvarList(self, &outCount);
     for (uint i = 0; i < outCount; ++i) {
         NSString *type = LXDecodeType(ivar_getTypeEncoding(ivars[i]));
-        NSString *ivarDescription = [NSString stringWithFormat:@"%@%@%s",
-                                     type,
-                                     [type hasSuffix:@"*"] ? @"" : @" ",
-                                     ivar_getName(ivars[i])];
-        [result addObject:ivarDescription];
+
+        if ([type hasSuffix:@"]"]) { // 数组类型，类似 int *[233] 这种形式
+            NSRange bracketRange  = [type rangeOfString:@"["];
+            NSRange asteriskRange = { bracketRange.location - 1, 1 };
+            asteriskRange = [type rangeOfString:@"*" options:0 range:asteriskRange];
+            NSString *name = [NSString stringWithFormat:@"%@%s",
+                              asteriskRange.location == NSNotFound ? @" " : @"", ivar_getName(ivars[i])];
+            NSMutableString *ivarDesc = [type mutableCopy];
+            [ivarDesc insertString:name atIndex:bracketRange.location];
+
+            [ivarList addObject:ivarDesc];
+        } else {
+            NSString *ivarDesc = [NSString stringWithFormat:@"%@%@%s",
+                                  type,
+                                  [type hasSuffix:@"*"] ? @"" : @" ",
+                                  ivar_getName(ivars[i])];
+            [ivarList addObject:ivarDesc];
+        }
+
     }
     free(ivars);
 
-    return result;
+    return ivarList;
 }
 
 + (void)lx_printIvarList
