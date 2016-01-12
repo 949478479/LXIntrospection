@@ -12,10 +12,10 @@
 
 #pragma mark - 格式化辅助函数 -
 
-static NSString * LXDecodeType(const char *typeString)
+static NSString *__LXTypeStringForTypeEncode(const char *typeEncode)
 {
     // 普通类型
-    switch (typeString[0]) {
+    switch (typeEncode[0]) {
         case 'c': return @"char";
         case 'C': return @"unsigned char";
         case 's': return @"short";
@@ -35,63 +35,63 @@ static NSString * LXDecodeType(const char *typeString)
     }
 
     // @ 开头表示对象
-    if (typeString[0] == '@') {
+    if (typeEncode[0] == '@') {
         // 单个 @ 表示 id 类型
-        if (strlen(typeString) == 1) return @"id";
+        if (strlen(typeEncode) == 1) return @"id";
 
         // @? 表示 block 类型，无法确定具体类型
-        if (!strcmp(typeString, "@?")) return @"Block";
+        if (!strcmp(typeEncode, "@?")) return @"Block";
 
         // 某种对象类型，类似 @"NSString" 这种格式
-        NSString *typeStr    = [NSString stringWithUTF8String:typeString];
-        NSString *subtypeStr = [typeStr substringWithRange:(NSRange){2, typeStr.length - 3}];
-        return [subtypeStr stringByAppendingString:@" *"];
+        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSString *typeStr = [typeEncodeStr substringWithRange:NSMakeRange(2, typeEncodeStr.length - 3)];
+        return [typeStr stringByAppendingString:@" *"];
     }
 
     // { 开头表示结构体，类似 {CGPoint=dd} 这种格式，如果是结构体二级指针，例如 CGPoint **，格式为 {CGPoint}
-    if (typeString[0] == '{') {
-        NSString  *typeStr  = [NSString stringWithUTF8String:typeString];
-        NSUInteger location = [typeStr rangeOfString:@"="].location;
-        NSRange    range    = { 1, location == NSNotFound ? typeStr.length - 2: location - 1 };
-        return [typeStr substringWithRange:range];
+    if (typeEncode[0] == '{') {
+        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSUInteger equalSignloc = [typeEncodeStr rangeOfString:@"="].location;
+        NSRange typeRange = { 1,  equalSignloc == NSNotFound ? typeEncodeStr.length - 2:  equalSignloc - 1 };
+        return [typeEncodeStr substringWithRange:typeRange];
     }
 
     // ^ 开头表示指针类型，例如 ^i 表示 int *
-    if (typeString[0] == '^') {
+    if (typeEncode[0] == '^') {
         // ^? 表示函数指针类型，但是无法确定具体类型
-        if (typeString[1] == '?') return @"FunctionPointer";
+        if (typeEncode[1] == '?') return @"FunctionPointer";
 
         // 进一步确定指针类型
-        NSString *subtypeStr = [[NSString stringWithUTF8String:typeString] substringFromIndex:1];
-        NSString *decodedTypeStr = LXDecodeType(subtypeStr.UTF8String);
+        NSString *subtypeEncode = [[NSString stringWithUTF8String:typeEncode] substringFromIndex:1];
+        NSString *subtypeStr = __LXTypeStringForTypeEncode(subtypeEncode.UTF8String);
         return [NSString stringWithFormat:@"%@%@*",
-                decodedTypeStr, [decodedTypeStr hasSuffix:@"*"] ? @"" : @" "];
+                subtypeStr, [subtypeStr hasSuffix:@"*"] ? @"" : @" "];
     }
 
     // [ 开头表示数组类型，例如 [3i] 表示 int[3]
-    if (typeString[0] == '[') {
-        NSString *typeStr    = [NSString stringWithUTF8String:typeString];
-        NSRange digitRange   = [typeStr rangeOfString:@"\\d+" options:NSRegularExpressionSearch];
-        NSString *digitStr   = [typeStr substringWithRange:digitRange];
-        NSRange subtypeRange = { digitRange.location + digitRange.length, typeStr.length - digitRange.length - 2 };
-        NSString *subtypeStr = [typeStr substringWithRange:subtypeRange];
+    if (typeEncode[0] == '[') {
+        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSRange digitRange = [typeEncodeStr rangeOfString:@"\\d+" options:NSRegularExpressionSearch];
+        NSString *digitStr = [typeEncodeStr substringWithRange:digitRange];
+        NSRange typeRange = { digitRange.location + digitRange.length, typeEncodeStr.length - digitRange.length - 2 };
+        NSString *subtypeEncodeStr = [typeEncodeStr substringWithRange:typeRange];
 
-        NSString *decodedSubtypeStr = LXDecodeType(subtypeStr.UTF8String);
-        NSRange range = [decodedSubtypeStr rangeOfString:@"["]; // 解析后的类型还是数组，形如 int[3]
+        NSString *subtypeStr = __LXTypeStringForTypeEncode(subtypeEncodeStr.UTF8String);
+        NSRange range = [subtypeStr rangeOfString:@"["];
         if (range.location != NSNotFound) {
-            // 例如，解析后类型为 int[3]，当前数字为 2，即外层数组容量为 2，则拼接格式为 int [2][3]
-            NSString *typeStr = [decodedSubtypeStr substringToIndex:range.location];
-            NSString *otherStr = [decodedSubtypeStr substringFromIndex:range.location];
+            // 例如，解析后还是个数组，类型为 int[3]，外层数组容量为 2，则拼接格式为 int [2][3]
+            NSString *typeStr = [subtypeStr substringToIndex:range.location];
+            NSString *otherStr = [subtypeStr substringFromIndex:range.location];
             return [NSString stringWithFormat:@"%@[%@]%@", typeStr, digitStr, otherStr];
         } else {
-            return [NSString stringWithFormat:@"%@[%@]", decodedSubtypeStr, digitStr];
+            return [NSString stringWithFormat:@"%@[%@]", subtypeStr, digitStr];
         }
     }
 
     // 某些特殊限定符
     NSString *qualifiers = nil;
     {
-        switch (typeString[0]) {
+        switch (typeEncode[0]) {
             case 'r': qualifiers = @"const";  break;
             case 'n': qualifiers = @"in";     break;
             case 'N': qualifiers = @"inout";  break;
@@ -101,24 +101,25 @@ static NSString * LXDecodeType(const char *typeString)
             case 'V': qualifiers = @"oneway"; break;
         }
         if (qualifiers) {
-            NSString *subtypeStr = [[NSString stringWithUTF8String:typeString] substringFromIndex:1];
-            return [NSString stringWithFormat:@"%@ %@", qualifiers, LXDecodeType(subtypeStr.UTF8String)];
+            NSString *subtypeEncodeStr = [[NSString stringWithUTF8String:typeEncode] substringFromIndex:1];
+            return [NSString stringWithFormat:@"%@ %@",
+                    qualifiers, __LXTypeStringForTypeEncode(subtypeEncodeStr.UTF8String)];
         }
     }
 
-    if (!strcmp(typeString, @encode(va_list))) return @"va_list";
+    if (!strcmp(typeEncode, @encode(va_list))) return @"va_list";
 
     return @"?"; // 无法确定
 }
 
-static NSString * LXFormattedPropery(objc_property_t prop)
+static NSString *__LXProperyDescription(objc_property_t prop)
 {
-    char *atomic             = "atomic";
-    char *policy             = "assign";
-    char getter[100]         = {};
-    char setter[100]         = {};
-    char *readwrite          = "";
-    NSString *propertyType   = nil;
+    char *atomic = "atomic";
+    char *policy = "assign";
+    char getter[100] = {};
+    char setter[100] = {};
+    char *readwrite = "";
+    NSString *propertyType = nil;
     const char *propertyName = property_getName(prop);
 
     uint attrCount;
@@ -127,14 +128,14 @@ static NSString * LXFormattedPropery(objc_property_t prop)
         const char *name  = attrs[idx].name;
         const char *value = attrs[idx].value;
         switch (name[0]) {
-            case 'N': atomic    = "nonatomic";  break;
-            case '&': policy    = "strong";     break;
-            case 'C': policy    = "copy";       break;
-            case 'W': policy    = "weak";       break;
+            case 'N': atomic = "nonatomic"; break;
+            case '&': policy = "strong"; break;
+            case 'C': policy = "copy"; break;
+            case 'W': policy = "weak"; break;
             case 'R': readwrite = ", readonly"; break;
             case 'G': strcpy(getter, ", getter="); strcat(getter, value); break;
             case 'S': strcpy(setter, ", setter="); strcat(setter, value); break;
-            case 'T': propertyType = LXDecodeType(value); break;
+            case 'T': propertyType = __LXTypeStringForTypeEncode(value); break;
         }
     }
     free(attrs);
@@ -150,26 +151,208 @@ static NSString * LXFormattedPropery(objc_property_t prop)
             propertyName];
 }
 
-static NSArray<NSString *> * LXMethodsForClass(Class class, NSString * type)
+static NSArray<NSString *> *__LXProtocolMethodDescriptionList(Protocol *proto, BOOL isRequiredMethod, BOOL isInstanceMethod)
 {
-    NSMutableArray *result = [NSMutableArray new];
+    uint outCount;
+    struct objc_method_description *methods =
+    protocol_copyMethodDescriptionList(proto, isRequiredMethod, isInstanceMethod,  &outCount);
+
+    NSMutableArray *descriptionList = [NSMutableArray arrayWithCapacity:outCount];
+
+    for (uint i = 0; i < outCount; ++i) {
+
+        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methods[i].types];
+
+        NSString *methodDescription = [NSString stringWithFormat:@"%@ (%@)%s",
+                                       isInstanceMethod ? @"-" : @"+",
+                                       __LXTypeStringForTypeEncode(methodSignature.methodReturnType),
+                                       sel_getName(methods[i].name)];
+
+        NSMutableArray *selParts = [[methodDescription componentsSeparatedByString:@":"] mutableCopy];
+        {
+            if (selParts.count > 1) [selParts removeLastObject]; // 移除末尾的 @""
+
+            NSUInteger args = methodSignature.numberOfArguments;
+            for (NSUInteger idx = 2; idx < args; ++idx) {
+                const char *argumentType = [methodSignature getArgumentTypeAtIndex:idx];
+                selParts[idx - 2] = [NSString stringWithFormat:@"%@:(%@)arg%lu",
+                                     selParts[idx - 2],
+                                     __LXTypeStringForTypeEncode(argumentType),
+                                     idx - 2];
+            }
+        }
+
+        selParts.count > 1 ?
+        [descriptionList addObject:[selParts componentsJoinedByString:@" "]] :
+        [descriptionList addObject:selParts[0]];
+    }
+
+    free(methods);
+
+    return descriptionList;
+}
+
+#pragma mark - 查看所有类的类名 -
+
+NSArray<NSString *> *LXClassNameList()
+{
+    uint outCount;
+    Class *classes = objc_copyClassList(&outCount);
+    NSMutableArray *classNameList = [NSMutableArray arrayWithCapacity:outCount];
+    for (uint i = 0; i < outCount; ++i) {
+        [classNameList addObject:NSStringFromClass(classes[i])];
+    }
+    free(classes);
+    return [classNameList sortedArrayUsingSelector:@selector(compare:)];
+}
+
+void LXPrintClassNameList()
+{
+    NSArray *classList = LXClassNameList();
+    NSLog(@"总计：%lu\n%@", classList.count, classList);
+}
+
+#pragma mark - 查看协议中的方法和属性 -
+
+NSDictionary<NSString *, NSArray<NSString *> *> *LXProtocolDescription(Protocol *proto)
+{
+    NSArray *requiredMethods = nil;
+    {
+        NSArray *classMethods    = __LXProtocolMethodDescriptionList(proto, YES, NO);
+        NSArray *instanceMethods = __LXProtocolMethodDescriptionList(proto, YES, YES);
+        requiredMethods = [classMethods arrayByAddingObjectsFromArray:instanceMethods];
+    }
+
+    NSArray *optionalMethods = nil;
+    {
+        NSArray *classMethods    = __LXProtocolMethodDescriptionList(proto, NO, NO);
+        NSArray *instanceMethods = __LXProtocolMethodDescriptionList(proto, NO, YES);
+        optionalMethods = [classMethods arrayByAddingObjectsFromArray:instanceMethods];
+    }
 
     uint outCount;
-    Method *methods = class_copyMethodList([type isEqualToString:@"+"] ?
-                                           object_getClass(class) : class, &outCount);
+    objc_property_t *properties = protocol_copyPropertyList(proto, &outCount);
+
+    NSMutableArray *propertyDescriptions = [NSMutableArray arrayWithCapacity:outCount];
+
+    for (uint i = 0; i < outCount; ++i) {
+        [propertyDescriptions addObject:__LXProperyDescription(properties[i])];
+    }
+
+    free(properties);
+
+    NSMutableDictionary *methodsAndProperties = [NSMutableDictionary dictionaryWithCapacity:3];
+    {
+        if (requiredMethods.count) {
+            methodsAndProperties[@"@required"] = requiredMethods;
+        }
+        if (optionalMethods.count) {
+            methodsAndProperties[@"@optional"] = optionalMethods;
+        }
+        if (propertyDescriptions.count) {
+            methodsAndProperties[@"@properties"] = propertyDescriptions;
+        }
+    }
+
+    return methodsAndProperties;
+}
+
+void LXPrintDescriptionForProtocol(Protocol *proto)
+{
+    NSLog(@"%s\n%@", protocol_getName(proto), LXProtocolDescription(proto));
+}
+
+#pragma mark -
+
+@implementation NSObject (LXIntrospection)
+
+#pragma mark - 查看实例变量和属性 -
+
++ (NSArray<NSString *> *)lx_propertyDescriptionList
+{
+    uint outCount;
+    objc_property_t *properties = class_copyPropertyList(self, &outCount);
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:outCount];
+    for (uint i = 0; i < outCount; ++i) {
+        [result addObject:__LXProperyDescription(properties[i])];
+    }
+    free(properties);
+
+    return result;
+}
+
++ (void)lx_printPropertyDescriptionList
+{
+    NSLog(@"%s\n%@", class_getName(self), [self lx_propertyDescriptionList]);
+}
+
++ (NSArray<NSString *> *)lx_ivarDescriptionList
+{
+    uint outCount;
+    Ivar *ivars = class_copyIvarList(self, &outCount);
+
+    NSMutableArray *ivarList = [NSMutableArray arrayWithCapacity:outCount];
+
+    for (uint i = 0; i < outCount; ++i) {
+        NSString *ivarType = __LXTypeStringForTypeEncode(ivar_getTypeEncoding(ivars[i]));
+
+        if ([ivarType hasSuffix:@"]"]) { // 数组类型，类似 int *[233] 这种形式
+
+            // 判断 [ 前是否是 *，若是则变量名和 * 间不空格，否则变量名和类型之间要空格
+            NSRange bracketRange  = [ivarType rangeOfString:@"["];
+            NSRange asteriskRange = { bracketRange.location - 1, 1 };
+            asteriskRange = [ivarType rangeOfString:@"*" options:0 range:asteriskRange];
+
+            NSString *ivarName = [NSString stringWithFormat:@"%@%s",
+                                  asteriskRange.location == NSNotFound ? @" " : @"",
+                                  ivar_getName(ivars[i])];
+
+            NSMutableString *ivarDesc = [ivarType mutableCopy];
+            [ivarDesc insertString:ivarName atIndex:bracketRange.location];
+            [ivarList addObject:ivarDesc];
+
+        } else { // 普通类型，形如 int * 或者 int
+            NSString *ivarDesc = [NSString stringWithFormat:@"%@%@%s",
+                                  ivarType,
+                                  [ivarType hasSuffix:@"*"] ? @"" : @" ",
+                                  ivar_getName(ivars[i])];
+            [ivarList addObject:ivarDesc];
+        }
+    }
+
+    free(ivars);
+
+    return ivarList;
+}
+
++ (void)lx_printIvarDescriptionList
+{
+    NSLog(@"%s\n%@", class_getName(self), [self lx_ivarDescriptionList]);
+}
+
+#pragma mark - 查看方法 -
+
+static NSArray<NSString *> *__LXMethodDescriptionListForClass(Class class)
+{
+    uint outCount;
+    Method *methods = class_copyMethodList(class, &outCount);
+
+    NSString *methodType = class_isMetaClass(class) ? @"+" : @"-";
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:outCount];
+
     for (uint i = 0; i < outCount; ++i) {
 
         NSString *methodDescription = nil;
         {
             char *returnType = method_copyReturnType(methods[i]);
             methodDescription = [NSString stringWithFormat:@"%@ (%@)%s",
-                                 type,
-                                 LXDecodeType(returnType),
+                                 methodType,
+                                 __LXTypeStringForTypeEncode(returnType),
                                  sel_getName(method_getName(methods[i]))];
             free(returnType);
         }
 
-        NSMutableArray *selParts = [methodDescription componentsSeparatedByString:@":"].mutableCopy;
+        NSMutableArray *selParts = [[methodDescription componentsSeparatedByString:@":"] mutableCopy];
         {
             if (selParts.count > 1) [selParts removeLastObject]; // 移除末尾的 @""
 
@@ -178,7 +361,7 @@ static NSArray<NSString *> * LXMethodsForClass(Class class, NSString * type)
                 char *argumentType = method_copyArgumentType(methods[i], idx);
                 selParts[idx - 2] = [NSString stringWithFormat:@"%@:(%@)arg%d",
                                      selParts[idx - 2],
-                                     LXDecodeType(argumentType),
+                                     __LXTypeStringForTypeEncode(argumentType),
                                      idx - 2];
                 free(argumentType);
             }
@@ -188,250 +371,82 @@ static NSArray<NSString *> * LXMethodsForClass(Class class, NSString * type)
         [result addObject:[selParts componentsJoinedByString:@" "]] :
         [result addObject:selParts[0]];
     }
-    free(methods);
 
+    free(methods);
+    
     return result;
 }
 
-static NSArray<NSString *> * LXFormattedMethodsForProtocol(Protocol *proto, BOOL isRequiredMethod, BOOL isInstanceMethod)
++ (NSArray<NSString *> *)lx_classMethodDescriptionList
 {
-    NSMutableArray *methodsDescription = [NSMutableArray new];
-
-    uint methodCount;
-    struct objc_method_description *methods =
-    protocol_copyMethodDescriptionList(proto, isRequiredMethod, isInstanceMethod,  &methodCount);
-    for (uint i = 0; i < methodCount; ++i) {
-
-        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methods[i].types];
-
-        NSString *methodDescription = [NSString stringWithFormat:@"%@ (%@)%s",
-                                       isInstanceMethod ? @"-" : @"+",
-                                       LXDecodeType(methodSignature.methodReturnType),
-                                       sel_getName(methods[i].name)];
-
-        NSMutableArray *selParts = [methodDescription componentsSeparatedByString:@":"].mutableCopy;
-        {
-            if (selParts.count > 1) [selParts removeLastObject]; // 移除末尾的 @""
-
-            NSUInteger args = methodSignature.numberOfArguments;
-            for (NSUInteger idx = 2; idx < args; ++idx) {
-                const char *argumentType = [methodSignature getArgumentTypeAtIndex:idx];
-                selParts[idx - 2] = [NSString stringWithFormat:@"%@:(%@)arg%lu",
-                                     selParts[idx - 2],
-                                     LXDecodeType(argumentType),
-                                     idx - 2];
-            }
-        }
-
-        selParts.count > 1 ?
-        [methodsDescription addObject:[selParts componentsJoinedByString:@" "]] :
-        [methodsDescription addObject:selParts[0]];
-    }
-    free(methods);
-
-    return methodsDescription;
+    return __LXMethodDescriptionListForClass(object_getClass(self));
 }
 
-#pragma mark - 查看所有类的类名 -
-
-NSArray<NSString *> * LXClassList()
++ (void)lx_printClassMethodDescriptionList
 {
-    NSMutableArray<NSString *> *result = [NSMutableArray new];
-
-    uint classesCount;
-    Class *classes = objc_copyClassList(&classesCount);
-    for (uint i = 0; i < classesCount; ++i) {
-        [result addObject:NSStringFromClass(classes[i])];
-    }
-    free(classes);
-
-    return [result sortedArrayUsingSelector:@selector(compare:)];
+    NSLog(@"%s\n%@", class_getName(self), [self lx_classMethodDescriptionList]);
 }
 
-void LXPrintClassList()
++ (NSArray<NSString *> *)lx_instanceMethodDescriptionList
 {
-    NSArray *classList = LXClassList();
-    NSLog(@"总计：%lu\n%@", classList.count, classList);
+    return __LXMethodDescriptionListForClass(self);
 }
 
-#pragma mark - 查看协议中的方法和属性 -
-
-NSDictionary<NSString *, NSArray<NSString *> *> * LXDescriptionForProtocol(Protocol *proto)
++ (void)lx_printInstanceMethodDescriptionList
 {
-    NSArray *requiredMethods = nil;
-    {
-        NSArray *classMethods    = LXFormattedMethodsForProtocol(proto, YES, NO);
-        NSArray *instanceMethods = LXFormattedMethodsForProtocol(proto, YES, YES);
-        requiredMethods = [classMethods arrayByAddingObjectsFromArray:instanceMethods];
-    }
-
-    NSArray *optionalMethods = nil;
-    {
-        NSArray *classMethods    = LXFormattedMethodsForProtocol(proto, NO, NO);
-        NSArray *instanceMethods = LXFormattedMethodsForProtocol(proto, NO, YES);
-        optionalMethods = [classMethods arrayByAddingObjectsFromArray:instanceMethods];
-    }
-
-    NSMutableArray *propertyDescriptions = [NSMutableArray array];
-    {
-        uint propertiesCount;
-        objc_property_t *properties = protocol_copyPropertyList(proto, &propertiesCount);
-        for (uint i = 0; i < propertiesCount; ++i) {
-            [propertyDescriptions addObject:LXFormattedPropery(properties[i])];
-        }
-        free(properties);
-    }
-
-    NSMutableDictionary *methodsAndProperties = [NSMutableDictionary dictionary];
-    {
-        if (requiredMethods.count) methodsAndProperties[@"@required"] = requiredMethods;
-        if (optionalMethods.count) methodsAndProperties[@"@optional"] = optionalMethods;
-        if (propertyDescriptions.count) methodsAndProperties[@"@properties"] = propertyDescriptions;
-    }
-
-    return methodsAndProperties;
-}
-
-void LXPrintDescriptionForProtocol(Protocol *proto)
-{
-    NSLog(@"%s\n%@", protocol_getName(proto), LXDescriptionForProtocol(proto));
-}
-
-#pragma mark -
-
-@implementation NSObject (LXIntrospection)
-
-#pragma mark - 查看属性 -
-
-+ (NSArray<NSString *> *)lx_propertyList
-{
-    NSMutableArray *result = [NSMutableArray new];
-
-    uint outCount;
-    objc_property_t *properties = class_copyPropertyList(self, &outCount);
-    for (uint i = 0; i < outCount; ++i) {
-        [result addObject:LXFormattedPropery(properties[i])];
-    }
-    free(properties);
-
-    return result;
-}
-
-+ (void)lx_printPropertyList
-{
-    NSLog(@"%s\n%@", class_getName(self), self.lx_propertyList);
-}
-
-#pragma mark - 查看实例变量 -
-
-+ (NSArray<NSString *> *)lx_ivarList
-{
-    NSMutableArray *ivarList = [NSMutableArray new];
-
-    uint outCount;
-    Ivar *ivars = class_copyIvarList(self, &outCount);
-    for (uint i = 0; i < outCount; ++i) {
-        NSString *type = LXDecodeType(ivar_getTypeEncoding(ivars[i]));
-
-        if ([type hasSuffix:@"]"]) { // 数组类型，类似 int *[233] 这种形式
-            NSRange bracketRange  = [type rangeOfString:@"["];
-            NSRange asteriskRange = { bracketRange.location - 1, 1 };
-            asteriskRange = [type rangeOfString:@"*" options:0 range:asteriskRange];
-            NSString *name = [NSString stringWithFormat:@"%@%s",
-                              asteriskRange.location == NSNotFound ? @" " : @"", ivar_getName(ivars[i])];
-            NSMutableString *ivarDesc = [type mutableCopy];
-            [ivarDesc insertString:name atIndex:bracketRange.location];
-
-            [ivarList addObject:ivarDesc];
-        } else {
-            NSString *ivarDesc = [NSString stringWithFormat:@"%@%@%s",
-                                  type,
-                                  [type hasSuffix:@"*"] ? @"" : @" ",
-                                  ivar_getName(ivars[i])];
-            [ivarList addObject:ivarDesc];
-        }
-
-    }
-    free(ivars);
-
-    return ivarList;
-}
-
-+ (void)lx_printIvarList
-{
-    NSLog(@"%s\n%@", class_getName(self), self.lx_ivarList);
-}
-
-#pragma mark - 查看类方法 -
-
-+ (NSArray<NSString *> *)lx_classMethodList
-{
-    return LXMethodsForClass(self, @"+");
-}
-
-+ (void)lx_printClassMethodList
-{
-    NSLog(@"%s\n%@", class_getName(self), self.lx_classMethodList);
-}
-
-#pragma mark - 查看实例方法 -
-
-+ (NSArray<NSString *> *)lx_instanceMethodList
-{
-    return LXMethodsForClass(self, @"-");
-}
-
-+ (void)lx_printInstanceMethodList
-{
-    NSLog(@"%s\n%@", class_getName(self), self.lx_instanceMethodList);
+    NSLog(@"%s\n%@", class_getName(self), [self lx_instanceMethodDescriptionList]);
 }
 
 #pragma mark - 查看采纳的协议 -
 
-+ (NSArray<NSString *> *)lx_protocolList
++ (NSArray<NSString *> *)lx_adoptedProtocolDescriptionList
 {
-    NSMutableArray *result = [NSMutableArray new];
-
     uint outCount;
     Protocol *__unsafe_unretained *protocols = class_copyProtocolList(self, &outCount);
+
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:outCount];
+
     for (uint i = 0; i < outCount; ++i) {
 
-        NSMutableArray *adoptedProtocolNames = [NSMutableArray new];
-        {
-            uint adoptedCount;
-            Protocol *__unsafe_unretained *adotedProtocols = protocol_copyProtocolList(protocols[i], &adoptedCount);
-            for (uint idx = 0; idx < adoptedCount; ++idx) {
-                [adoptedProtocolNames addObject:
-                 (NSString *)[NSString stringWithUTF8String:protocol_getName(adotedProtocols[idx])]];
-            }
-            free(adotedProtocols);
+        uint adoptedCount;
+        Protocol *__unsafe_unretained *adotedProtocols =
+        protocol_copyProtocolList(protocols[i], &adoptedCount);
+
+        NSMutableArray *adoptedProtocolNames = [NSMutableArray arrayWithCapacity:adoptedCount];
+
+        for (uint idx = 0; idx < adoptedCount; ++idx) {
+            [adoptedProtocolNames addObject:
+             [NSString stringWithUTF8String:protocol_getName(adotedProtocols[idx])]];
         }
 
-        NSMutableString *protocolDescription = [NSMutableString stringWithUTF8String:protocol_getName(protocols[i])];
-        {
-            if (adoptedProtocolNames.count) {
-                [protocolDescription appendFormat:@" <%@>",
-                 [adoptedProtocolNames componentsJoinedByString:@", "]];
-            }
+        free(adotedProtocols);
+
+        NSMutableString *protocolDescription =
+        [NSMutableString stringWithUTF8String:protocol_getName(protocols[i])];
+
+        if (adoptedProtocolNames.count) {
+            [protocolDescription appendFormat:@" <%@>",
+             [adoptedProtocolNames componentsJoinedByString:@", "]];
         }
 
         [result addObject:protocolDescription];
     }
+    
     free(protocols);
-
+    
     return result;
 }
 
-+ (void)lx_printProtocolList
++ (void)lx_printAdoptedProtocolDescriptionList
 {
-    NSLog(@"%s\n%@", class_getName(self), self.lx_protocolList);
+    NSLog(@"%s\n%@", class_getName(self), [self lx_adoptedProtocolDescriptionList]);
 }
 
 #pragma mark - 查看继承层级关系 -
 
 + (NSString *)lx_inheritanceTree
 {
-    NSMutableArray<NSString *> *classNames = [NSMutableArray new];
+    NSMutableArray *classNames = [NSMutableArray new];
     {
         Class superClass = self;
         do {
@@ -443,8 +458,8 @@ void LXPrintDescriptionForProtocol(Protocol *proto)
     {
         NSUInteger count = classNames.count;
         [classNames enumerateObjectsWithOptions:NSEnumerationReverse
-                                     usingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                                         NSMutableString *className = obj.mutableCopy;
+                                     usingBlock:^(NSString *obj, NSUInteger idx, BOOL *stop) {
+                                         NSMutableString *className = [obj mutableCopy];
                                          for (NSUInteger i = 0; count - 1 - idx > i; ++i) {
                                              [className insertString:@" " atIndex:0];
                                          }
@@ -457,49 +472,33 @@ void LXPrintDescriptionForProtocol(Protocol *proto)
 
 + (void)lx_printInheritanceTree
 {
-    NSLog(@"%s%@", class_getName(self), self.lx_inheritanceTree);
+    NSLog(@"%s%@", class_getName(self), [self lx_inheritanceTree]);
 }
 
-#pragma mark - 获取属性名数组 -
-
-+ (NSArray<NSString *> *)lx_propertyNameList
-{
-    NSMutableArray *propertyArray = [NSMutableArray new];
-
-    uint outCount;
-    objc_property_t *properties = class_copyPropertyList(self, &outCount);
-    for (uint i = 0; i < outCount; ++i) {
-        [propertyArray addObject:[NSString stringWithUTF8String:property_getName(properties[i])]];
-    }
-    free(properties);
-
-    return propertyArray;
-}
-
-- (NSArray<NSString *> *)lx_propertyNameList
-{
-    return self.class.lx_propertyNameList;
-}
-
-#pragma mark - 获取实例变量名数组 -
+#pragma mark - 获取实例变量名和属性名数组 -
 
 + (NSArray<NSString *> *)lx_ivarNameList
 {
-    NSMutableArray *ivarArray = [NSMutableArray new];
-
     uint outCount;
     Ivar *ivars = class_copyIvarList(self, &outCount);
+    NSMutableArray *ivarArray = [NSMutableArray arrayWithCapacity:outCount];
     for (uint i = 0; i < outCount; ++i) {
         [ivarArray addObject:[NSString stringWithUTF8String:ivar_getName(ivars[i])]];
     }
     free(ivars);
-
     return ivarArray;
 }
 
-- (NSArray<NSString *> *)lx_ivarNameList
++ (NSArray<NSString *> *)lx_propertyNameList
 {
-    return self.class.lx_ivarNameList;
+    uint outCount;
+    objc_property_t *properties = class_copyPropertyList(self, &outCount);
+    NSMutableArray *propertyArray = [NSMutableArray arrayWithCapacity:outCount];
+    for (uint i = 0; i < outCount; ++i) {
+        [propertyArray addObject:[NSString stringWithUTF8String:property_getName(properties[i])]];
+    }
+    free(properties);
+    return propertyArray;
 }
 
 @end

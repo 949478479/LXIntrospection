@@ -9,50 +9,32 @@
 @import Foundation;
 #import "NSObject+LXIntrospection.h"
 
-@interface Foo : NSObject {
-    id xxx[1];
-
-    NSNumber *fsaf[1][2][3];
-//
-//    int *i[1];
-//    int *ii[2];
-//    int **iii[3];
-//
-//    CGRect c[1];
-//    CGRect *cc[2];
-//    CGRect **ccc[3];
-}
-@end
-@implementation Foo
-@end
-
 int main(int argc, const char * argv[]) {
 
-    [Foo lx_printIvarList];
-//    [NSObject lx_printIvarList];
-//    [NSObject lx_printPropertyList];
-
-//    [NSObject lx_printClassMethodList];
-//    [NSObject lx_printInstanceMethodList];
-
-//    [NSData lx_printProtocolList];
+//    [NSObject lx_printIvarDescriptionList];
+//    [NSObject lx_printPropertyDescriptionList];
+//
+//    [NSObject lx_printClassMethodDescriptionList];
+//    [NSObject lx_printInstanceMethodDescriptionList];
+//
+//    [NSData lx_printAdoptedProtocolDescriptionList];
 //    [NSMutableArray lx_printInheritanceTree];
-
-//    LXPrintClassList();
+//
+//    LXPrintClassNameList();
 //    LXPrintDescriptionForProtocol(@protocol(NSObject));
-
-    
-//    NSLog(@"%@", [NSObject lx_ivarList]);
-//    NSLog(@"%@", [NSObject lx_propertyList]);
-
-//    NSLog(@"%@", [NSObject lx_classMethodList]);
-//    NSLog(@"%@", [NSObject lx_instanceMethodList]);
-
-//    NSLog(@"%@", [NSData lx_protocolList]);
+//
+//    
+//    NSLog(@"%@", [NSObject lx_ivarDescriptionList]);
+//    NSLog(@"%@", [NSObject lx_propertyDescriptionList]);
+//
+//    NSLog(@"%@", [NSObject lx_classMethodDescriptionList]);
+//    NSLog(@"%@", [NSObject lx_instanceMethodDescriptionList]);
+//
+//    NSLog(@"%@", [NSData lx_adoptedProtocolDescriptionList]);
 //    NSLog(@"%@", [NSMutableArray lx_inheritanceTree]);
-
-//    NSLog(@"%@", LXClassList());
-//    NSLog(@"%@", LXDescriptionForProtocol(@protocol(NSObject)));
+//
+//    NSLog(@"%@", LXClassNameList());
+//    NSLog(@"%@", LXProtocolDescription(@protocol(NSObject)));
 
     return 0;
 }

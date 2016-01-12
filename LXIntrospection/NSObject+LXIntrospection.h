@@ -16,34 +16,34 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NSObject (LXIntrospection)
 
-///-----------------------------
-/// @name 格式化的变量列表和属性列表
-///-----------------------------
+///---------------------------
+/// @name 变量和属性格式化描述列表
+///---------------------------
 
-+ (NSArray<NSString *> *)lx_ivarList;
-+ (NSArray<NSString *> *)lx_propertyList;
++ (NSArray<NSString *> *)lx_ivarDescriptionList;
++ (NSArray<NSString *> *)lx_propertyDescriptionList;
 
-+ (void)lx_printIvarList;
-+ (void)lx_printPropertyList;
++ (void)lx_printIvarDescriptionList;
++ (void)lx_printPropertyDescriptionList;
 
-///-------------------------------
-/// @name 格式化的类方法和实例方法列表
-///-------------------------------
+///--------------------------------
+/// @name 类方法和实例方法格式化描述列表
+///--------------------------------
 
-+ (NSArray<NSString *> *)lx_classMethodList;
-+ (NSArray<NSString *> *)lx_instanceMethodList;
++ (NSArray<NSString *> *)lx_classMethodDescriptionList;
++ (NSArray<NSString *> *)lx_instanceMethodDescriptionList;
 
-+ (void)lx_printClassMethodList;
-+ (void)lx_printInstanceMethodList;
++ (void)lx_printClassMethodDescriptionList;
++ (void)lx_printInstanceMethodDescriptionList;
 
-///---------------------------------------
-/// @name 格式化的类继承层级关系和采纳的协议列表
-///---------------------------------------
+///----------------------------------------
+/// @name 类继承层级关系和采纳的协议格式化描述列表
+///----------------------------------------
 
 + (NSString *)lx_inheritanceTree;
-+ (NSArray<NSString *> *)lx_protocolList;
++ (NSArray<NSString *> *)lx_adoptedProtocolDescriptionList;
 
-+ (void)lx_printProtocolList;
++ (void)lx_printAdoptedProtocolDescriptionList;
 + (void)lx_printInheritanceTree;
 
 ///-----------------------------
@@ -52,13 +52,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 获取实例变量名数组。
 + (NSArray<NSString *> *)lx_ivarNameList;
-/// 获取实例变量名数组。
-- (NSArray<NSString *> *)lx_ivarNameList;
 
 /// 获取属性名数组。
 + (NSArray<NSString *> *)lx_propertyNameList;
-/// 获取属性名数组。
-- (NSArray<NSString *> *)lx_propertyNameList;
 
 @end
 
@@ -67,17 +63,17 @@ NS_ASSUME_NONNULL_BEGIN
 ///--------------
 
 /// 获取全部类名。
-NSArray<NSString *> * LXClassList();
+NSArray<NSString *> *LXClassNameList();
 /// 打印全部类名。
-void LXPrintClassList();
+void LXPrintClassNameList();
 
 ///---------------------
 /// @name 格式化的协议声明
 ///---------------------
 
-/// 获取格式化的指定协议声明。
-NSDictionary<NSString *, NSArray<NSString *> *> * LXDescriptionForProtocol(Protocol *proto);
-/// 打印格式化的指定协议声明。
+/// 获取指定协议的格式化描述。
+NSDictionary<NSString *, NSArray<NSString *> *> *LXProtocolDescription(Protocol *proto);
+/// 打印指定协议的格式化描述。
 void LXPrintDescriptionForProtocol(Protocol *proto);
 
 NS_ASSUME_NONNULL_END

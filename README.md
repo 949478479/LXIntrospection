@@ -7,7 +7,7 @@
 ### 查看属性
 
 ```Objective-C
-(lldb) po [UIView lx_propertyList]
+(lldb) po [UIView lx_propertyDescriptionList]
 (
     @property (nonatomic, assign) int action,
     @property (atomic, copy, readonly) NSString *description,
@@ -25,7 +25,7 @@
 ### 查看实例变量
 
 ```Objective-C
-(lldb) po [UIView lx_ivarList]
+(lldb) po [UIView lx_ivarDescriptionList]
 (
     NSMutableArray *_constraintsExceptingSubviewAutoresizingConstraints,
     UITraitCollection *_cachedTraitCollection,
@@ -43,7 +43,7 @@
 ### 查看实例方法
 
 ```Objective-C
-(lldb) po [UIView lx_instanceMethodList]
+(lldb) po [UIView lx_instanceMethodDescriptionList]
 (
     - (void)_web_setSubviews:(id)arg0,
     - (id)_recursiveFindDescendantScrollViewAtPoint:(CGPoint)arg0 withEvent:(id)arg1,
@@ -56,7 +56,7 @@
 ### 查看类方法
 
 ```Objective-C
-(lldb) po [UIView lx_classMethodList]
+(lldb) po [UIView lx_classMethodDescriptionList]
 (
     + (id)_axFocusedWindowSubviews,
     + (id)_accessibilityTitleForSystemTag:(long)arg0,
@@ -70,7 +70,7 @@
 ### 查看采纳的协议
 
 ```Objective-C
-(lldb) po [UIView lx_protocolList]
+(lldb) po [UIView lx_adoptedProtocolDescriptionList]
 (
     _UIScrollNotification <NSObject>,
     UITextEffectsOrdering,
@@ -97,7 +97,7 @@
 ### 查看协议内容
 
 ```Objective-C
-NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
+NSLog(@"%@", LXProtocolDescription(@protocol(NSObject)));
 
 {
     @optional = (
@@ -136,7 +136,7 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
 ### 查看系统中所有类
 
 ```Objective-C
-(lldb) po DLClassList()
+(lldb) po LXClassNameList()
 (
     ABAnyValuePredicate,
     ABCCallbackInvoker,
@@ -155,17 +155,17 @@ NSLog(@"%@", DLDescriptionForProtocol(@protocol(NSObject)));
 为了保持格式化效果，需要桥接为 `NSArray` 或者 `NSDictionary`，并使用 `NSLog` 函数打印：
 
 ```swift
-NSLog("%@", NSObject.lx_classMethodList() as NSArray)
+NSLog("%@", NSObject.lx_classMethodDescriptionList() as NSArray)
 ```
 
 为了方便，专门提供了一些打印方法：
 
 ```swift
 // 在 LLDB 调试器中
-(lldb) p NSObject.lx_printClassMethodList()
+(lldb) p NSObject.lx_printClassMethodDescriptionList()
 
 // 在代码中
-NSObject.lx_printClassMethodList()
+NSObject.lx_printClassMethodDescriptionList()
 ```
 
 ## 注意事项
