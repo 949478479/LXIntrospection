@@ -43,14 +43,14 @@ static NSString *__LXTypeStringForTypeEncode(const char *typeEncode)
         if (!strcmp(typeEncode, "@?")) return @"Block";
 
         // 某种对象类型，类似 @"NSString" 这种格式
-        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSString *typeEncodeStr = @(typeEncode);
         NSString *typeStr = [typeEncodeStr substringWithRange:NSMakeRange(2, typeEncodeStr.length - 3)];
         return [typeStr stringByAppendingString:@" *"];
     }
 
     // { 开头表示结构体，类似 {CGPoint=dd} 这种格式，如果是结构体二级指针，例如 CGPoint **，格式为 {CGPoint}
     if (typeEncode[0] == '{') {
-        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSString *typeEncodeStr = @(typeEncode);
         NSUInteger equalSignloc = [typeEncodeStr rangeOfString:@"="].location;
         NSRange typeRange = { 1,  equalSignloc == NSNotFound ? typeEncodeStr.length - 2:  equalSignloc - 1 };
         return [typeEncodeStr substringWithRange:typeRange];
@@ -62,15 +62,14 @@ static NSString *__LXTypeStringForTypeEncode(const char *typeEncode)
         if (typeEncode[1] == '?') return @"FunctionPointer";
 
         // 进一步确定指针类型
-        NSString *subtypeEncode = [[NSString stringWithUTF8String:typeEncode] substringFromIndex:1];
-        NSString *subtypeStr = __LXTypeStringForTypeEncode(subtypeEncode.UTF8String);
+        NSString *subtypeStr = __LXTypeStringForTypeEncode(typeEncode + 1);
         return [NSString stringWithFormat:@"%@%@*",
                 subtypeStr, [subtypeStr hasSuffix:@"*"] ? @"" : @" "];
     }
 
     // [ 开头表示数组类型，例如 [3i] 表示 int[3]
     if (typeEncode[0] == '[') {
-        NSString *typeEncodeStr = [NSString stringWithUTF8String:typeEncode];
+        NSString *typeEncodeStr = @(typeEncode);
         NSRange digitRange = [typeEncodeStr rangeOfString:@"\\d+" options:NSRegularExpressionSearch];
         NSString *digitStr = [typeEncodeStr substringWithRange:digitRange];
         NSRange typeRange = { digitRange.location + digitRange.length, typeEncodeStr.length - digitRange.length - 2 };
@@ -101,9 +100,8 @@ static NSString *__LXTypeStringForTypeEncode(const char *typeEncode)
             case 'V': qualifiers = @"oneway"; break;
         }
         if (qualifiers) {
-            NSString *subtypeEncodeStr = [[NSString stringWithUTF8String:typeEncode] substringFromIndex:1];
             return [NSString stringWithFormat:@"%@ %@",
-                    qualifiers, __LXTypeStringForTypeEncode(subtypeEncodeStr.UTF8String)];
+                    qualifiers, __LXTypeStringForTypeEncode(typeEncode + 1)];
         }
     }
 
@@ -170,7 +168,9 @@ static NSArray<NSString *> *__LXProtocolMethodDescriptionList(Protocol *proto, B
 
         NSMutableArray *selParts = [[methodDescription componentsSeparatedByString:@":"] mutableCopy];
         {
-            if (selParts.count > 1) [selParts removeLastObject]; // 移除末尾的 @""
+            if (selParts.count > 1) {
+                [selParts removeLastObject]; // 移除末尾的 @""
+            }
 
             NSUInteger args = methodSignature.numberOfArguments;
             for (NSUInteger idx = 2; idx < args; ++idx) {
@@ -354,7 +354,9 @@ static NSArray<NSString *> *__LXMethodDescriptionListForClass(Class class)
 
         NSMutableArray *selParts = [[methodDescription componentsSeparatedByString:@":"] mutableCopy];
         {
-            if (selParts.count > 1) [selParts removeLastObject]; // 移除末尾的 @""
+            if (selParts.count > 1) {
+                [selParts removeLastObject]; // 移除末尾的 @""
+            }
 
             uint args = method_getNumberOfArguments(methods[i]);
             for (uint idx = 2; idx < args; ++idx) {
@@ -415,8 +417,7 @@ static NSArray<NSString *> *__LXMethodDescriptionListForClass(Class class)
         NSMutableArray *adoptedProtocolNames = [NSMutableArray arrayWithCapacity:adoptedCount];
 
         for (uint idx = 0; idx < adoptedCount; ++idx) {
-            [adoptedProtocolNames addObject:
-             [NSString stringWithUTF8String:protocol_getName(adotedProtocols[idx])]];
+            [adoptedProtocolNames addObject:@(protocol_getName(adotedProtocols[idx]))];
         }
 
         free(adotedProtocols);
@@ -483,7 +484,7 @@ static NSArray<NSString *> *__LXMethodDescriptionListForClass(Class class)
     Ivar *ivars = class_copyIvarList(self, &outCount);
     NSMutableArray *ivarArray = [NSMutableArray arrayWithCapacity:outCount];
     for (uint i = 0; i < outCount; ++i) {
-        [ivarArray addObject:[NSString stringWithUTF8String:ivar_getName(ivars[i])]];
+        [ivarArray addObject:@(ivar_getName(ivars[i]))];
     }
     free(ivars);
     return ivarArray;
@@ -495,7 +496,7 @@ static NSArray<NSString *> *__LXMethodDescriptionListForClass(Class class)
     objc_property_t *properties = class_copyPropertyList(self, &outCount);
     NSMutableArray *propertyArray = [NSMutableArray arrayWithCapacity:outCount];
     for (uint i = 0; i < outCount; ++i) {
-        [propertyArray addObject:[NSString stringWithUTF8String:property_getName(properties[i])]];
+        [propertyArray addObject:@(property_getName(properties[i]))];
     }
     free(properties);
     return propertyArray;
