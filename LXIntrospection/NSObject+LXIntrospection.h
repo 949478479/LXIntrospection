@@ -7,9 +7,6 @@
 
 @import Foundation;
 
-/// 开启后会通过分类方法覆盖 NSArray 和 NSDictionary 的 debugDescription 和 descriptionWithLocale: 方法。
-#define ENABLE_LOG_ALIGNMENT 1
-
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NSObject (LXIntrospection)
@@ -48,10 +45,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @name 获取属性名和实例变量名数组
 ///-----------------------------
 
-/// 获取实例变量名数组（不包括继承部分）。
+/// 获取实例变量名数组
 + (NSArray<NSString *> *)lx_ivarNameList;
 
-/// 获取属性名数组（不包括继承部分）。
+/// 获取属性名数组
 + (NSArray<NSString *> *)lx_propertyNameList;
 
 @end
@@ -60,18 +57,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// @name 全部类名
 ///--------------
 
-/// 获取全部类名。
+/// 获取全部类名
 NSArray<NSString *> *LXClassNameList();
-/// 打印全部类名。
+/// 打印全部类名
 void LXPrintClassNameList();
 
 ///---------------------
 /// @name 格式化的协议声明
 ///---------------------
 
-/// 获取指定协议的格式化描述（不包括继承部分）。
+/// 获取指定协议的格式化描述（不包括继承部分）
 NSDictionary<NSString *, NSArray<NSString *> *> *LXProtocolDescription(Protocol *proto);
-/// 打印指定协议的格式化描述（不包括继承部分）。
+/// 打印指定协议的格式化描述（不包括继承部分）
 void LXPrintDescriptionForProtocol(Protocol *proto);
 
 NS_ASSUME_NONNULL_END

@@ -21,7 +21,7 @@ int main(int argc, const char * argv[]) {
 //    [NSMutableArray lx_printInheritanceTree];
 //
 //    LXPrintClassNameList();
-//    LXPrintDescriptionForProtocol(@protocol(NSObject));
+//    LXPrintDescriptionForProtocol(@protocol(NSSecureCoding));
 //
 //    
 //    NSLog(@"%@", [NSObject lx_ivarDescriptionList]);
